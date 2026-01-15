@@ -1,0 +1,63 @@
+services:
+  # --- Frontend ---
+  toncoincoin-frontend:
+    build:
+      context: ./toncoincoin-frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: toncoincoin-front
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./toncoincoin-frontend:/app
+      - /app/node_modules # Empêche Docker d'écraser les modules installés dans l'image
+      - /app/.next
+    networks:
+      - app-network
+    # En dev, tu commenteras souvent cette section pour lancer 
+    # le front en local avec 'npm run dev' pour le Hot Reload.
+
+    # --- Database (Postgres) ---
+  toncoincoin-db:
+    image: postgres:16-alpine
+    container_name: toncoincoin-db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: toncoincoin_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # --- DB GUI (Adminer) ---
+  toncoincoin-adminer:
+    image: adminer
+    container_name: toncoincoin-adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  # --- Cache (Redis - Optionnel mais recommandé) ---
+  toncoincoin-redis:
+    image: redis:alpine
+    container_name: toncoincoin-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db-data:
